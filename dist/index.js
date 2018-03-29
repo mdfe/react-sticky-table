@@ -131,6 +131,8 @@
       value: function componentDidMount() {
         var _this2 = this;
 
+        var footerRow = this.props.footerRow;
+
         this.dom = {};
 
         if (document.getElementById('sticky-table-' + this.id)) {
@@ -146,6 +148,10 @@
           this.dom.stickyHeaderTable = this.dom.stickyHeader.querySelector('.sticky-table-table');
           this.dom.stickyColumnTable = this.dom.stickyColumn.querySelector('.sticky-table-table');
           this.dom.stickyCornerTable = this.dom.stickyCorner.querySelector('.sticky-table-table');
+          if (footerRow) {
+            this.dom.stickyHeaderFooter = this.dom.wrapper.querySelector('.sticky-table-header.footer');
+            this.dom.stickyHeaderFooterTable = this.dom.stickyHeaderFooter.querySelector('.sticky-table-table');
+          }
 
           this.setScrollData();
 
@@ -169,6 +175,14 @@
     }, {
       key: 'componentDidUpdate',
       value: function componentDidUpdate() {
+        var prevProps = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+        if (prevProps.footFixedOnTop !== this.props.footFixedOnTop) {
+          this.dom.stickyHeaderFooter = this.dom.wrapper.querySelector('.sticky-table-header.footer');
+          this.dom.stickyHeaderFooterTable = this.dom.stickyHeaderFooter.querySelector('.sticky-table-table');
+          this.setColumnWidths();
+          this.onScrollX();
+        }
         this.considerResizing();
       }
     }, {
@@ -227,6 +241,13 @@
       value: function onScrollX() {
         var scrollLeft = Math.max(this.dom.xWrapper.scrollLeft, 0);
         this.dom.stickyHeaderTable.style.transform = 'translate(' + -1 * scrollLeft + 'px, 0) translateZ(0)';
+        var list = document.querySelector('.sheetTableScrollMove');
+        if (list) {
+          list.style.transform = 'translate(' + -1 * scrollLeft + 'px, 0) translateZ(0)';
+        }
+        if (this.dom.stickyHeaderFooterTable) {
+          this.dom.stickyHeaderFooterTable.style.transform = 'translate(' + -1 * scrollLeft + 'px, 0) translateZ(0)';
+        }
       }
     }, {
       key: 'scrollXScrollbar',
@@ -266,6 +287,8 @@
             _ref$forceWrapperResi = _ref.forceWrapperResize,
             forceWrapperResize = _ref$forceWrapperResi === undefined ? false : _ref$forceWrapperResi;
 
+        var footerRow = this.props.footerRow;
+
         var wrapperSize = { width: this.dom.wrapper.offsetWidth, height: this.dom.wrapper.offsetWidth };
         var tableCellSizes = {
           corner: { width: this.dom.stickyCornerTable.offsetWidth, height: this.dom.stickyCornerTable.offsetHeight },
@@ -288,7 +311,7 @@
           this.handleScroll();
 
           this.dom.xWrapper.style.maxWidth = 'calc(100% - ' + this.dom.stickyColumn.offsetWidth + 'px';
-          this.dom.yWrapper.style.height = 'calc(100% - ' + this.dom.stickyHeader.offsetHeight + 'px';
+          this.dom.yWrapper.style.height = 'calc(100% - ' + this.dom.stickyHeader.offsetHeight * (footerRow ? 2 : 1) + 'px';
 
           this.oldWrapperSize = wrapperSize;
         }
@@ -332,7 +355,7 @@
       value: function setRowHeights() {
         var _this3 = this;
 
-        var bodyRows, stickyHeaderRows, stickyCornerRows, stickyColumnRows, cells, columnHeight, resizeRow, row;
+        var bodyRows, stickyHeaderRows, stickyHeaderFooterRows, stickyCornerRows, stickyColumnRows, cells, columnHeight, resizeRow, row;
 
         if (this.rowCount > 0 && this.props.stickyColumnCount > 0) {
           bodyRows = this.dom.bodyTable.childNodes;
@@ -340,6 +363,9 @@
 
           stickyCornerRows = this.dom.stickyCornerTable.childNodes;
           stickyHeaderRows = this.dom.stickyHeaderTable.childNodes;
+          if (this.dom.stickyHeaderFooterTable) {
+            stickyHeaderFooterRows = this.dom.stickyHeaderFooterTable.childNodes[0].childNodes;
+          }
 
           resizeRow = function resizeRow(row) {
             cells = [];
@@ -348,6 +374,9 @@
               //It's a sticky column
               cells[0] = stickyCornerRows[row].childNodes[0];
               cells[1] = stickyHeaderRows[row].childNodes[0];
+              if (_this3.dom.stickyHeaderFooterTable) {
+                cells[2] = stickyHeaderFooterRows[row].childNodes[0];
+              }
             } else {
               //It's a body column
               cells[0] = stickyColumnRows[row - _this3.props.stickyHeaderCount].childNodes[0];
@@ -375,11 +404,14 @@
       value: function setColumnWidths() {
         var _this4 = this;
 
-        var firstBodyRowCells, firstStickyHeaderRowCells, firstStickyCornerRowCells, firstStickyColumnRowCells, cells, resizeColumn, column;
+        var firstBodyRowCells, firstStickyHeaderRowCells, firstStickyHeaderFooterRowCells, firstStickyCornerRowCells, firstStickyColumnRowCells, cells, resizeColumn, column;
 
         if (this.columnCount > 0 && this.props.stickyHeaderCount > 0) {
           firstBodyRowCells = this.dom.bodyTable.childNodes[0].childNodes;
           firstStickyHeaderRowCells = this.dom.stickyHeaderTable.childNodes[0].childNodes;
+          if (this.dom.stickyHeaderFooterTable) {
+            firstStickyHeaderFooterRowCells = this.dom.stickyHeaderFooterTable.childNodes[0].childNodes;
+          }
 
           firstStickyCornerRowCells = this.dom.stickyCornerTable.childNodes[0].childNodes;
           firstStickyColumnRowCells = this.dom.stickyColumnTable.childNodes[0].childNodes;
@@ -395,6 +427,9 @@
               //It's a body column
               cells[0] = firstBodyRowCells[column - _this4.props.stickyColumnCount];
               cells[1] = firstStickyHeaderRowCells[column - _this4.props.stickyColumnCount];
+              if (_this4.dom.stickyHeaderFooterTable) {
+                cells[2] = firstStickyHeaderFooterRowCells[column - _this4.props.stickyColumnCount];
+              }
             }
 
             //IMPORTANT: minWidth is a necessary property here
@@ -495,12 +530,39 @@
     }, {
       key: 'render',
       value: function render() {
+        var _props = this.props,
+            footerRow = _props.footerRow,
+            footFixedOnTop = _props.footFixedOnTop,
+            emptyEle = _props.emptyEle;
+
         var rows = _react2.default.Children.toArray(this.props.children);
 
         var stickyCornerRows = this.getStickyCornerRows(rows);
         var stickyColumnRows = this.getStickyColumnRows(rows);
         var stickyHeaderRows = this.getStickyHeaderRows(rows);
         var bodyRows = this.getBodyRows(rows);
+        var tableFooter = !!footerRow ? _react2.default.createElement(
+          'div',
+          { className: 'sticky-table-header-wrapper footer' },
+          _react2.default.createElement(
+            'div',
+            { className: ['sticky-table-corner', this.props.stickyHeaderCount && this.props.stickyColumnCount ? '' : 'hidden'].join(' ') },
+            _react2.default.createElement(
+              _Table2.default,
+              null,
+              this.getStickyCornerRows([footerRow])
+            )
+          ),
+          _react2.default.createElement(
+            'div',
+            { className: ['sticky-table-header footer', this.props.stickyHeaderCount ? '' : 'hidden'].join(' ') },
+            _react2.default.createElement(
+              _Table2.default,
+              null,
+              this.getStickyHeaderRows([footerRow])
+            )
+          )
+        ) : undefined;
 
         this.rowCount = rows.length;
         this.columnCount = rows[0] && _react2.default.Children.toArray(rows[0].props.children).length || 0;
@@ -540,6 +602,7 @@
               )
             )
           ),
+          footFixedOnTop && tableFooter,
           _react2.default.createElement(
             'div',
             { className: 'sticky-table-y-wrapper' },
@@ -561,7 +624,9 @@
                 bodyRows
               )
             )
-          )
+          ),
+          !footFixedOnTop && tableFooter,
+          emptyEle
         );
       }
     }]);
@@ -570,9 +635,12 @@
   }(_react.PureComponent);
 
   StickyTable.propTypes = {
+    footerRow: _propTypes2.default.element,
+    emptyEle: _propTypes2.default.element,
     stickyHeaderCount: _propTypes2.default.number,
     stickyColumnCount: _propTypes2.default.number,
-    onScroll: _propTypes2.default.func
+    onScroll: _propTypes2.default.func,
+    footFixedOnTop: _propTypes2.default.bool
   };
   StickyTable.defaultProps = {
     stickyHeaderCount: 1,

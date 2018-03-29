@@ -15,9 +15,12 @@ import Cell from './Cell';
  */
 class StickyTable extends PureComponent {
   static propTypes = {
+    footerRow: PropTypes.element,
+    emptyEle: PropTypes.element,
     stickyHeaderCount: PropTypes.number,
     stickyColumnCount: PropTypes.number,
-    onScroll: PropTypes.func
+    onScroll: PropTypes.func,
+    footFixedOnTop: PropTypes.bool
   };
 
   static defaultProps = {
@@ -48,6 +51,7 @@ class StickyTable extends PureComponent {
    * @returns {undefined}
    */
   componentDidMount() {
+    const { footerRow } = this.props;
     this.dom = {};
 
     if (document.getElementById('sticky-table-' + this.id)) {
@@ -63,6 +67,10 @@ class StickyTable extends PureComponent {
       this.dom.stickyHeaderTable = this.dom.stickyHeader.querySelector('.sticky-table-table');
       this.dom.stickyColumnTable = this.dom.stickyColumn.querySelector('.sticky-table-table');
       this.dom.stickyCornerTable = this.dom.stickyCorner.querySelector('.sticky-table-table');
+      if (footerRow) {
+        this.dom.stickyHeaderFooter = this.dom.wrapper.querySelector('.sticky-table-header.footer');
+        this.dom.stickyHeaderFooterTable = this.dom.stickyHeaderFooter.querySelector('.sticky-table-table');
+      }
 
       this.setScrollData();
 
@@ -83,9 +91,16 @@ class StickyTable extends PureComponent {
   }
 
   /**
+   * @param {object} prevProps prevProps
    * @returns {undefined}
    */
-  componentDidUpdate() {
+  componentDidUpdate(prevProps = {}) {
+    if (prevProps.footFixedOnTop !== this.props.footFixedOnTop) {
+      this.dom.stickyHeaderFooter = this.dom.wrapper.querySelector('.sticky-table-header.footer');
+      this.dom.stickyHeaderFooterTable = this.dom.stickyHeaderFooter.querySelector('.sticky-table-table');
+      this.setColumnWidths();
+      this.onScrollX();
+    }
     this.considerResizing();
   }
 
@@ -158,6 +173,13 @@ class StickyTable extends PureComponent {
   onScrollX() {
     var scrollLeft = Math.max(this.dom.xWrapper.scrollLeft, 0);
     this.dom.stickyHeaderTable.style.transform = 'translate(' + (-1 * scrollLeft) + 'px, 0) translateZ(0)';
+    var list = document.querySelector('.sheetTableScrollMove');
+    if (list) {
+      list.style.transform = 'translate(' + (-1 * scrollLeft) + 'px, 0) translateZ(0)';
+    }
+    if (this.dom.stickyHeaderFooterTable) {
+      this.dom.stickyHeaderFooterTable.style.transform = 'translate(' + (-1 * scrollLeft) + 'px, 0) translateZ(0)';
+    }
   }
 
   /**
@@ -203,6 +225,7 @@ class StickyTable extends PureComponent {
    * @returns {undefined}
    */
   considerResizing({forceCellTableResize=false, forceWrapperResize=false} = {}) {
+    const { footerRow } = this.props;
     var wrapperSize = {width: this.dom.wrapper.offsetWidth, height: this.dom.wrapper.offsetWidth};
     var tableCellSizes = {
       corner: {width: this.dom.stickyCornerTable.offsetWidth, height: this.dom.stickyCornerTable.offsetHeight},
@@ -225,7 +248,7 @@ class StickyTable extends PureComponent {
       this.handleScroll();
 
       this.dom.xWrapper.style.maxWidth = `calc(100% - ${this.dom.stickyColumn.offsetWidth}px`;
-      this.dom.yWrapper.style.height = `calc(100% - ${this.dom.stickyHeader.offsetHeight}px`;
+      this.dom.yWrapper.style.height = `calc(100% - ${this.dom.stickyHeader.offsetHeight * (footerRow ? 2 : 1)}px`;
 
       this.oldWrapperSize = wrapperSize;
     }
@@ -279,7 +302,7 @@ class StickyTable extends PureComponent {
    * @returns {undefined}
    */
   setRowHeights() {
-    var bodyRows, stickyHeaderRows, stickyCornerRows, stickyColumnRows, cells, columnHeight, resizeRow, row;
+    var bodyRows, stickyHeaderRows, stickyHeaderFooterRows, stickyCornerRows, stickyColumnRows, cells, columnHeight, resizeRow, row;
 
     if (this.rowCount > 0 && this.props.stickyColumnCount > 0) {
       bodyRows = this.dom.bodyTable.childNodes;
@@ -287,6 +310,9 @@ class StickyTable extends PureComponent {
 
       stickyCornerRows = this.dom.stickyCornerTable.childNodes;
       stickyHeaderRows = this.dom.stickyHeaderTable.childNodes;
+      if (this.dom.stickyHeaderFooterTable) {
+        stickyHeaderFooterRows  = this.dom.stickyHeaderFooterTable.childNodes[0].childNodes;
+      }
 
       resizeRow = row => {
         cells = [];
@@ -294,6 +320,9 @@ class StickyTable extends PureComponent {
         if (row < this.props.stickyHeaderCount) { //It's a sticky column
           cells[0] = stickyCornerRows[row].childNodes[0];
           cells[1] = stickyHeaderRows[row].childNodes[0];
+          if (this.dom.stickyHeaderFooterTable) {
+            cells[2] = stickyHeaderFooterRows[row].childNodes[0];
+          }
         } else { //It's a body column
           cells[0] = stickyColumnRows[row - this.props.stickyHeaderCount].childNodes[0];
           cells[1] = bodyRows[row - this.props.stickyHeaderCount].childNodes[0];
@@ -317,13 +346,16 @@ class StickyTable extends PureComponent {
    * @returns {undefined}
    */
   setColumnWidths() {
-    var firstBodyRowCells, firstStickyHeaderRowCells, firstStickyCornerRowCells, firstStickyColumnRowCells,
+    var firstBodyRowCells, firstStickyHeaderRowCells, firstStickyHeaderFooterRowCells, firstStickyCornerRowCells, firstStickyColumnRowCells,
       cells, resizeColumn, column;
 
     if (this.columnCount > 0 && this.props.stickyHeaderCount > 0) {
       firstBodyRowCells = this.dom.bodyTable.childNodes[0].childNodes;
       firstStickyHeaderRowCells = this.dom.stickyHeaderTable.childNodes[0].childNodes;
-
+      if (this.dom.stickyHeaderFooterTable) {
+        firstStickyHeaderFooterRowCells = this.dom.stickyHeaderFooterTable.childNodes[0].childNodes;
+      }
+      
       firstStickyCornerRowCells = this.dom.stickyCornerTable.childNodes[0].childNodes;
       firstStickyColumnRowCells = this.dom.stickyColumnTable.childNodes[0].childNodes;
 
@@ -336,6 +368,9 @@ class StickyTable extends PureComponent {
         } else { //It's a body column
           cells[0] = firstBodyRowCells[column - this.props.stickyColumnCount];
           cells[1] = firstStickyHeaderRowCells[column - this.props.stickyColumnCount];
+          if (this.dom.stickyHeaderFooterTable) {
+            cells[2] = firstStickyHeaderFooterRowCells[column - this.props.stickyColumnCount];
+          }
         }
 
         //IMPORTANT: minWidth is a necessary property here
@@ -415,16 +450,25 @@ class StickyTable extends PureComponent {
    * @returns {undefined}
    */
   render() {
+    var { footerRow, footFixedOnTop, emptyEle } = this.props;
     var rows = React.Children.toArray(this.props.children);
 
     var stickyCornerRows = this.getStickyCornerRows(rows);
     var stickyColumnRows = this.getStickyColumnRows(rows);
     var stickyHeaderRows = this.getStickyHeaderRows(rows);
     var bodyRows = this.getBodyRows(rows);
+    var tableFooter = !!footerRow ? <div className='sticky-table-header-wrapper footer'>
+      <div className={['sticky-table-corner', (this.props.stickyHeaderCount && this.props.stickyColumnCount) ? '' : 'hidden'].join(' ')}>
+        <Table>{ this.getStickyCornerRows([footerRow]) }</Table>
+      </div>
+      <div className={['sticky-table-header footer', this.props.stickyHeaderCount ? '' : 'hidden'].join(' ')}>
+        <Table>{ this.getStickyHeaderRows([footerRow]) }</Table>
+      </div>
+    </div> : undefined;
 
     this.rowCount = rows.length;
     this.columnCount = (rows[0] && React.Children.toArray(rows[0].props.children).length) || 0;
-
+    
     return (
       <div className={'sticky-table ' + (this.props.className || '')} id={'sticky-table-' + this.id}>
         <div className='x-scrollbar'><div></div></div>
@@ -437,6 +481,7 @@ class StickyTable extends PureComponent {
             <Table>{stickyHeaderRows}</Table>
           </div>
         </div>
+        { footFixedOnTop && tableFooter }
         <div className='sticky-table-y-wrapper'>
           <div className={['sticky-table-column', this.props.stickyColumnCount ? '' : 'hidden'].join(' ')}>
             <Table>{stickyColumnRows}</Table>
@@ -445,6 +490,8 @@ class StickyTable extends PureComponent {
             <Table>{bodyRows}</Table>
           </div>
         </div>
+        { !footFixedOnTop && tableFooter }
+        { emptyEle }
       </div>
     );
   }
