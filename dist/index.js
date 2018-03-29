@@ -416,13 +416,16 @@
           firstStickyCornerRowCells = this.dom.stickyCornerTable.childNodes[0].childNodes;
           firstStickyColumnRowCells = this.dom.stickyColumnTable.childNodes[0].childNodes;
 
-          resizeColumn = function resizeColumn(column) {
+          resizeColumn = function resizeColumn(column, forceWidth) {
             cells = [];
 
             if (column < _this4.props.stickyColumnCount) {
               //It's a sticky column
               cells[0] = firstStickyColumnRowCells[column];
               cells[1] = firstStickyCornerRowCells[column];
+              if (forceWidth) {
+                return;
+              }
             } else {
               //It's a body column
               cells[0] = firstBodyRowCells[column - _this4.props.stickyColumnCount];
@@ -441,12 +444,17 @@
             var columnWidth = Math.max(_this4.getNodeSize(cells[0]).width, _this4.getNodeSize(cells[1]).width);
 
             cells.forEach(function (cell) {
-              return cell.style.width = cell.style.minWidth = columnWidth + 'px';
+              return cell.style.width = cell.style.minWidth = (forceWidth || columnWidth) + 'px';
             });
           };
 
           for (column = 0; column < this.columnCount; column++) {
             setTimeout(resizeColumn(column));
+          }
+          if (this.dom.stickyHeader.clientWidth < this.dom.wrapper.clientWidth - this.dom.stickyCorner.clientWidth) {
+            for (column = 0; column < this.columnCount; column++) {
+              setTimeout(resizeColumn(column, (this.dom.wrapper.clientWidth - this.dom.stickyCorner.clientWidth - 10) / firstBodyRowCells.length));
+            }
           }
         }
       }

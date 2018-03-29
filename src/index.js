@@ -359,12 +359,15 @@ class StickyTable extends PureComponent {
       firstStickyCornerRowCells = this.dom.stickyCornerTable.childNodes[0].childNodes;
       firstStickyColumnRowCells = this.dom.stickyColumnTable.childNodes[0].childNodes;
 
-      resizeColumn = column => {
+      resizeColumn = (column, forceWidth) => {
         cells = [];
 
         if (column < this.props.stickyColumnCount) { //It's a sticky column
           cells[0] = firstStickyColumnRowCells[column];
           cells[1] = firstStickyCornerRowCells[column];
+          if (forceWidth) {
+            return;
+          }
         } else { //It's a body column
           cells[0] = firstBodyRowCells[column - this.props.stickyColumnCount];
           cells[1] = firstStickyHeaderRowCells[column - this.props.stickyColumnCount];
@@ -378,12 +381,17 @@ class StickyTable extends PureComponent {
         cells.forEach(cell => cell.style.width = cell.style.minWidth = '');
 
         var columnWidth = Math.max(this.getNodeSize(cells[0]).width, this.getNodeSize(cells[1]).width);
-
-        cells.forEach(cell => cell.style.width = cell.style.minWidth = `${columnWidth}px`);
+        
+        cells.forEach(cell => cell.style.width = cell.style.minWidth = `${forceWidth || columnWidth}px`);
       };
 
       for (column = 0; column < this.columnCount; column++) {
         setTimeout(resizeColumn(column));
+      }
+      if (this.dom.stickyHeader.clientWidth < this.dom.wrapper.clientWidth - this.dom.stickyCorner.clientWidth) {
+        for (column = 0; column < this.columnCount; column++) {
+          setTimeout(resizeColumn(column, (this.dom.wrapper.clientWidth - this.dom.stickyCorner.clientWidth - 10) / firstBodyRowCells.length));
+        }
       }
     }
   }
