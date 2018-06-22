@@ -104,12 +104,12 @@
 
       var _this = _possibleConstructorReturn(this, (StickyTable.__proto__ || Object.getPrototypeOf(StickyTable)).call(this, props));
 
-      _this.id = Math.floor(Math.random() * 1000000000) + '';
-
       _this.rowCount = 0;
       _this.columnCount = 0;
       _this.xScrollSize = 0;
       _this.yScrollSize = 0;
+
+      _this.dom = {};
 
       _this.stickyHeaderCount = props.stickyHeaderCount === 0 ? 0 : _this.stickyHeaderCount || 1;
 
@@ -133,10 +133,7 @@
 
         var footerRow = this.props.footerRow;
 
-        this.dom = {};
-
-        if (document.getElementById('sticky-table-' + this.id)) {
-          this.dom.wrapper = document.getElementById('sticky-table-' + this.id);
+        if (this.dom.wrapper) {
           this.dom.bodyTable = this.dom.wrapper.querySelector('.sticky-table-x-wrapper .sticky-table-table');
           this.dom.xScrollbar = this.dom.wrapper.querySelector('.x-scrollbar');
           this.dom.yScrollbar = this.dom.wrapper.querySelector('.y-scrollbar');
@@ -289,7 +286,10 @@
 
         var footerRow = this.props.footerRow;
 
-        var wrapperSize = { width: this.dom.wrapper.offsetWidth, height: this.dom.wrapper.offsetWidth };
+        var wrapperSize = {
+          width: this.dom.wrapper.offsetWidth,
+          height: this.dom.wrapper.offsetWidth
+        };
         var tableCellSizes = {
           corner: { width: this.dom.stickyCornerTable.offsetWidth, height: this.dom.stickyCornerTable.offsetHeight },
           header: { width: this.dom.stickyHeaderTable.offsetWidth, height: this.dom.stickyHeaderTable.offsetHeight },
@@ -297,14 +297,17 @@
           body: { width: this.dom.bodyTable.offsetWidth, height: this.dom.bodyTable.offsetHeight }
         };
 
-        if (forceCellTableResize || !this.oldTableCellSizes || JSON.stringify(tableCellSizes) !== JSON.stringify(this.oldTableCellSizes)) {
+        var tableCellSizesChanged = JSON.stringify(tableCellSizes) !== JSON.stringify(this.oldTableCellSizes);
+        var wrapperSizeChanged = JSON.stringify(wrapperSize) !== JSON.stringify(this.oldWrapperSize);
+
+        if (forceCellTableResize || !this.oldTableCellSizes || tableCellSizesChanged) {
           this.setRowHeights();
           this.setColumnWidths();
 
           this.oldTableCellSizes = tableCellSizes;
         }
 
-        if (forceWrapperResize || !this.oldWrapperSize || JSON.stringify(wrapperSize) !== JSON.stringify(this.oldWrapperSize)) {
+        if (forceWrapperResize || !this.oldWrapperSize || wrapperSizeChanged || tableCellSizesChanged) {
           this.setScrollBarDims();
           this.setScrollBarWrapperDims();
           this.setScrollData();
@@ -334,18 +337,19 @@
     }, {
       key: 'setScrollBarDims',
       value: function setScrollBarDims() {
+        var width = this.getNodeSize(this.dom.bodyTable.firstChild).width + this.dom.stickyColumn.offsetWidth;
+        this.dom.xScrollbar.firstChild.style.width = width + 'px';
+
         this.xScrollSize = this.dom.xScrollbar.offsetHeight - this.dom.xScrollbar.clientHeight;
+
+        var height = this.dom.bodyTable.offsetHeight + this.dom.stickyHeader.offsetHeight;
+        this.dom.yScrollbar.firstChild.style.height = height + 'px';
+
         this.yScrollSize = this.dom.yScrollbar.offsetWidth - this.dom.yScrollbar.clientWidth;
 
         if (!this.isFirefox) {
           this.setScrollBarPaddings();
         }
-
-        var width = this.getNodeSize(this.dom.bodyTable.firstChild).width;
-        this.dom.xScrollbar.firstChild.style.width = width + 'px';
-
-        var height = this.getNodeSize(this.dom.bodyTable).height + this.xScrollSize - this.dom.stickyHeader.offsetHeight;
-        this.dom.yScrollbar.firstChild.style.height = height + 'px';
 
         if (this.xScrollSize) this.dom.xScrollbar.style.height = this.xScrollSize + 1 + 'px';
         if (this.yScrollSize) this.dom.yScrollbar.style.width = this.yScrollSize + 1 + 'px';
@@ -538,13 +542,19 @@
     }, {
       key: 'render',
       value: function render() {
+        var _this9 = this;
+
         var _props = this.props,
             footerRow = _props.footerRow,
             footFixedOnTop = _props.footFixedOnTop,
             emptyEle = _props.emptyEle;
 
-        var rows = _react2.default.Children.toArray(this.props.children);
-
+        //This is probably sub-optimal because render only needs
+        //to be called for react components that are sub-classed
+        //and don't have props.children that are <Cell>s
+        var rows = _react2.default.Children.toArray(this.props.children).map(function (row) {
+          return new row.type(row.props).render(); // eslint-disable-line new-cap
+        });
         var stickyCornerRows = this.getStickyCornerRows(rows);
         var stickyColumnRows = this.getStickyColumnRows(rows);
         var stickyHeaderRows = this.getStickyHeaderRows(rows);
@@ -574,10 +584,12 @@
 
         this.rowCount = rows.length;
         this.columnCount = rows[0] && _react2.default.Children.toArray(rows[0].props.children).length || 0;
-
+        var setWrapperElement = function setWrapperElement(element) {
+          if (element) _this9.dom.wrapper = element;
+        };
         return _react2.default.createElement(
           'div',
-          { className: 'sticky-table ' + (this.props.className || ''), id: 'sticky-table-' + this.id },
+          { className: 'sticky-table ' + (this.props.className || ''), ref: setWrapperElement },
           _react2.default.createElement(
             'div',
             { className: 'x-scrollbar' },
