@@ -547,7 +547,8 @@
         var _props = this.props,
             footerRow = _props.footerRow,
             footFixedOnTop = _props.footFixedOnTop,
-            emptyEle = _props.emptyEle;
+            emptyEle = _props.emptyEle,
+            loadingEle = _props.loadingEle;
 
         //This is probably sub-optimal because render only needs
         //to be called for react components that are sub-classed
@@ -589,7 +590,7 @@
         };
         return _react2.default.createElement(
           'div',
-          { className: 'sticky-table ' + (this.props.className || ''), ref: setWrapperElement },
+          { className: 'sticky-table ' + (this.props.className || '') + (loadingEle ? ' loading' : ''), ref: setWrapperElement },
           _react2.default.createElement(
             'div',
             { className: 'x-scrollbar' },
@@ -626,6 +627,7 @@
           _react2.default.createElement(
             'div',
             { className: 'sticky-table-y-wrapper' },
+            loadingEle,
             _react2.default.createElement(
               'div',
               { className: ['sticky-table-column', this.props.stickyColumnCount ? '' : 'hidden'].join(' ') },
@@ -657,6 +659,7 @@
   StickyTable.propTypes = {
     footerRow: _propTypes2.default.element,
     emptyEle: _propTypes2.default.element,
+    loadingEle: _propTypes2.default.element,
     stickyHeaderCount: _propTypes2.default.number,
     stickyColumnCount: _propTypes2.default.number,
     onScroll: _propTypes2.default.func,

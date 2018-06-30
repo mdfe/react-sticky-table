@@ -17,6 +17,7 @@ class StickyTable extends PureComponent {
   static propTypes = {
     footerRow: PropTypes.element,
     emptyEle: PropTypes.element,
+    loadingEle: PropTypes.element,
     stickyHeaderCount: PropTypes.number,
     stickyColumnCount: PropTypes.number,
     onScroll: PropTypes.func,
@@ -462,7 +463,7 @@ class StickyTable extends PureComponent {
    * @returns {undefined}
    */
   render() {
-    var { footerRow, footFixedOnTop, emptyEle } = this.props;
+    var { footerRow, footFixedOnTop, emptyEle, loadingEle } = this.props;
     //This is probably sub-optimal because render only needs
     //to be called for react components that are sub-classed
     //and don't have props.children that are <Cell>s
@@ -488,7 +489,7 @@ class StickyTable extends PureComponent {
       if (element) this.dom.wrapper = element;
     }
     return (
-      <div className={'sticky-table ' + (this.props.className || '')} ref={setWrapperElement}>
+      <div className={'sticky-table ' + (this.props.className || '') + (loadingEle ? ' loading' : '')} ref={setWrapperElement}>
         <div className='x-scrollbar'><div></div></div>
         <div className='y-scrollbar'><div></div></div>
         <div className='sticky-table-header-wrapper'>
@@ -501,6 +502,7 @@ class StickyTable extends PureComponent {
         </div>
         { footFixedOnTop && tableFooter }
         <div className='sticky-table-y-wrapper'>
+          { loadingEle }
           <div className={['sticky-table-column', this.props.stickyColumnCount ? '' : 'hidden'].join(' ')}>
             <Table>{stickyColumnRows}</Table>
           </div>
