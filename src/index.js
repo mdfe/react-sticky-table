@@ -352,7 +352,7 @@ class StickyTable extends PureComponent {
    */
   setColumnWidths() {
     var firstBodyRowCells, firstStickyHeaderRowCells, firstStickyHeaderFooterRowCells, firstStickyCornerRowCells, firstStickyColumnRowCells,
-      cells, resizeColumn, column;
+      cells, resizeColumn, column, getWidthWhenFillTable;
 
     if (this.columnCount > 0 && this.props.stickyHeaderCount > 0) {
       firstBodyRowCells = this.dom.bodyTable.childNodes[0].childNodes;
@@ -387,15 +387,25 @@ class StickyTable extends PureComponent {
 
         var columnWidth = Math.max(this.getNodeSize(cells[0]).width, this.getNodeSize(cells[1]).width);
         
-        cells.forEach(cell => cell.style.width = cell.style.minWidth = `${forceWidth || columnWidth}px`);
+        cells.forEach(cell => cell.style.width = cell.style.minWidth = `${forceWidth && forceWidth > columnWidth ? forceWidth : columnWidth}px`);
       };
+
+      getWidthWhenFillTable = () => {
+        var contentWidth = this.dom.wrapper.clientWidth - this.dom.stickyCorner.clientWidth - 10;
+        var allAverage = contentWidth / firstBodyRowCells.length;
+        var overAverageCells = Array.prototype.slice.call(firstBodyRowCells).filter(cell => this.getNodeSize(cell).width > allAverage);
+        return (contentWidth - (overAverageCells.length ? overAverageCells.map(a => this.getNodeSize(a).width).reduce((a, b) => a + b) : 0)) / (firstBodyRowCells.length - overAverageCells.length);
+      }
 
       for (column = 0; column < this.columnCount; column++) {
         setTimeout(resizeColumn(column));
       }
       if (this.dom.stickyHeader.clientWidth < this.dom.wrapper.clientWidth - this.dom.stickyCorner.clientWidth) {
         for (column = 0; column < this.columnCount; column++) {
-          setTimeout(resizeColumn(column, (this.dom.wrapper.clientWidth - this.dom.stickyCorner.clientWidth - 10) / firstBodyRowCells.length));
+          setTimeout(resizeColumn(
+            column,
+            getWidthWhenFillTable(),
+          ));
         }
       }
     }
