@@ -296,11 +296,13 @@
           column: { width: this.dom.stickyColumnTable.offsetWidth, height: this.dom.stickyColumnTable.offsetHeight },
           body: { width: this.dom.bodyTable.offsetWidth, height: this.dom.bodyTable.offsetHeight }
         };
-
+        if (footerRow) {
+          tableCellSizes.headerFooter = { width: this.dom.stickyHeaderFooterTable.offsetWidth, height: this.dom.stickyHeaderFooterTable.offsetHeight };
+        }
         var tableCellSizesChanged = JSON.stringify(tableCellSizes) !== JSON.stringify(this.oldTableCellSizes);
         var wrapperSizeChanged = JSON.stringify(wrapperSize) !== JSON.stringify(this.oldWrapperSize);
 
-        if (forceCellTableResize || !this.oldTableCellSizes || tableCellSizesChanged) {
+        if (forceCellTableResize || !this.oldTableCellSizes || tableCellSizesChanged || this.dom.stickyHeader.clientWidth < this.dom.wrapper.clientWidth - this.dom.stickyCorner.clientWidth - this.dom.yScrollbar.offsetWidth) {
           this.setRowHeights();
           this.setColumnWidths();
 
@@ -445,7 +447,7 @@
               return cell.style.width = cell.style.minWidth = '';
             });
 
-            var columnWidth = Math.max(_this4.getNodeSize(cells[0]).width, _this4.getNodeSize(cells[1]).width);
+            var columnWidth = Math.max(_this4.getNodeSize(cells[0]).width, _this4.getNodeSize(cells[1]).width, cells[2] ? _this4.getNodeSize(cells[2]).width : -1);
 
             cells.forEach(function (cell) {
               return cell.style.width = cell.style.minWidth = (forceWidth && forceWidth > columnWidth ? forceWidth : columnWidth) + 'px';

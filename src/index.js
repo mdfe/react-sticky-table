@@ -234,11 +234,13 @@ class StickyTable extends PureComponent {
       column: {width: this.dom.stickyColumnTable.offsetWidth, height: this.dom.stickyColumnTable.offsetHeight},
       body: {width: this.dom.bodyTable.offsetWidth, height: this.dom.bodyTable.offsetHeight}
     };
-
+    if (footerRow) {
+      tableCellSizes.headerFooter = {width: this.dom.stickyHeaderFooterTable.offsetWidth, height: this.dom.stickyHeaderFooterTable.offsetHeight};
+    }
     var tableCellSizesChanged = JSON.stringify(tableCellSizes) !== JSON.stringify(this.oldTableCellSizes);
     var wrapperSizeChanged = JSON.stringify(wrapperSize) !== JSON.stringify(this.oldWrapperSize);
 
-    if (forceCellTableResize || !this.oldTableCellSizes || tableCellSizesChanged) {
+    if (forceCellTableResize || !this.oldTableCellSizes || tableCellSizesChanged || (this.dom.stickyHeader.clientWidth < this.dom.wrapper.clientWidth - this.dom.stickyCorner.clientWidth - this.dom.yScrollbar.offsetWidth)) {
       this.setRowHeights();
       this.setColumnWidths();
 
@@ -385,7 +387,7 @@ class StickyTable extends PureComponent {
         //because display: table-cell desparately wants to be dynamic/minimum in size
         cells.forEach(cell => cell.style.width = cell.style.minWidth = '');
 
-        var columnWidth = Math.max(this.getNodeSize(cells[0]).width, this.getNodeSize(cells[1]).width);
+        var columnWidth = Math.max(this.getNodeSize(cells[0]).width, this.getNodeSize(cells[1]).width, cells[2] ? this.getNodeSize(cells[2]).width : -1);
         
         cells.forEach(cell => cell.style.width = cell.style.minWidth = `${forceWidth && forceWidth > columnWidth ? forceWidth : columnWidth}px`);
       };
