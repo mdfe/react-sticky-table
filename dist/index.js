@@ -303,7 +303,7 @@
         var wrapperSizeChanged = JSON.stringify(wrapperSize) !== JSON.stringify(this.oldWrapperSize);
 
         if (forceCellTableResize || !this.oldTableCellSizes || tableCellSizesChanged || this.dom.stickyHeader.clientWidth < this.dom.wrapper.clientWidth - this.dom.stickyCorner.clientWidth - this.dom.yScrollbar.offsetWidth) {
-          this.setRowHeights();
+          // this.setRowHeights();
           this.setColumnWidths();
 
           this.oldTableCellSizes = tableCellSizes;
