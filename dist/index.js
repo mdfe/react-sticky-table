@@ -157,8 +157,6 @@
             return _this2.considerResizing();
           });
 
-          this.resizeInterval = setInterval(this.considerResizing, 60);
-
           //X Scrollbars
           this.dom.xWrapper.addEventListener('scroll', this.onScrollX);
           this.dom.xWrapper.addEventListener('scroll', this.scrollXScrollbar);
